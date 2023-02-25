@@ -11,10 +11,10 @@ typealias YourResult = Int
 
 let maxConcurrentTasks = 20
 let duration = 99999 // higher means longer tasks
-let difficulty = 0.01 // percent of tasks that should succeed
+let difficulty = 0.01 // fraction of tasks that should succeed
 
 let threshold = Int(Double(duration) * difficulty)
-print("Threshold is \(threshold)")
+print("Threshold is \(threshold)") // lower is more difficult
 
 let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResult? in
     
@@ -30,7 +30,7 @@ let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResul
             let result = (0...duration).shuffled().first!
             print("finished \(thread): \(result)")
             let succeeded = result < threshold
-            return succeeded ? result : nil // lower is more difficult
+            return succeeded ? result : nil
         }
     }
     
