@@ -7,32 +7,51 @@
 
 import Foundation
 
-let result = try await withThrowingTaskGroup(of: Int.self) { group -> Int in
+typealias YourResult = Int
+
+let maxConcurrentTasks = 20
+let duration = 99999 // higher means longer tasks
+let difficulty = 0.01 // percent of tasks that should succeed
+
+let threshold = Int(Double(duration) * difficulty)
+print("Threshold is \(threshold)")
+
+let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResult? in
     
-    func newJob(number: Int) {
+    var count = 0
+    var yourResult: YourResult?
+    
+    func newJob() {
+        count += 1
+        let thread = count
         group.addTask(priority: .userInitiated) {
-            print("starting \(number)")
-            _ = (1...99999).shuffled().sorted()
-            return number
+            try Task.checkCancellation()
+            print("started \(thread)")
+            let result = (0...duration).shuffled().first!
+            print("finished \(thread): \(result)")
+            let succeeded = result < threshold
+            return succeeded ? result : nil // lower is more difficult
         }
     }
     
-    var count = 20
     
-    for thread in 1...count {
-        newJob(number: thread)
+    
+    for _ in 1...maxConcurrentTasks {
+        newJob()
     }
     
-    var done: Int = 0
     
-    for try await thread in group {
-        print("finished \(thread)")
-        done += 1
-        count += 1
-        newJob(number: count)
+    for try await result in group {
+        if let result = result {
+            yourResult = result
+            group.cancelAll()
+            print("CANCELLED ALL")
+        } else {
+            if yourResult == nil { newJob() }
+        }
     }
     
-    return done
+    return yourResult
 }
 
-print("all \(result) done")
+print("Found \(result!)!")
