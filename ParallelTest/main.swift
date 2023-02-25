@@ -16,10 +16,9 @@ let difficulty = 0.01 // fraction of tasks that should succeed
 let threshold = Int(Double(duration) * difficulty)
 print("Threshold is \(threshold)") // lower is more difficult
 
-let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResult? in
+let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResult in
     
     var count = 0
-    var yourResult: YourResult?
     
     func newJob() {
         count += 1
@@ -34,24 +33,21 @@ let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResul
         }
     }
     
-    
-    
     for _ in 1...maxConcurrentTasks {
         newJob()
     }
     
-    
     for try await result in group {
         if let result = result {
-            yourResult = result
             group.cancelAll()
             print("CANCELLED ALL")
+            return result
         } else {
-            if yourResult == nil { newJob() }
+            newJob()
         }
     }
     
-    return yourResult
+    fatalError("ran out of tasks???")
 }
 
-print("Found \(result!)!")
+print("Found \(result)!")
