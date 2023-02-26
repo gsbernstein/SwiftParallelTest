@@ -16,7 +16,11 @@ let difficulty = 0.01 // fraction of tasks that should succeed
 let threshold = Int(Double(duration) * difficulty)
 print("Threshold is \(threshold)") // lower is more difficult
 
-let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResult? in
+enum ParallelError: Error {
+    case cancelled
+}
+
+let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResult in
     
     var count = 0
     
@@ -47,7 +51,7 @@ let result = try await withThrowingTaskGroup(of: Int?.self) { group -> YourResul
         }
     }
     
-    return nil
+    throw ParallelError.cancelled
 }
 
-print("Found \(result!)!")
+print("Found \(result)!")
